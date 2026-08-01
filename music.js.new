@@ -1,0 +1,183 @@
+/* =========================================
+   ATIRA'S JOURNEY MUSIC PLAYER
+========================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const toggleButton = document.getElementById("musicToggle");
+    const volumeSlider = document.getElementById("musicVolume");
+    const nextButton = document.getElementById("nextMusic");
+    const prevButton = document.getElementById("prevMusic");
+    const playerTitle = document.getElementById("playerTitle");
+    const playerSubtitle = document.getElementById("playerSubtitle");
+
+    let audio = document.getElementById("backgroundMusic");
+
+    if (!audio) {
+        audio = document.createElement("audio");
+        audio.id = "backgroundMusic";
+        audio.preload = "auto";
+        document.body.appendChild(audio);
+    }
+
+    const playlist = [
+        {
+            title: "Our Theme",
+            subtitle: "ATIRA'S JOURNEY",
+            src: "assets/audio/Theme.mp3"
+        },
+        {
+            title: "Our Memories",
+            subtitle: "GALLERY",
+            src: "assets/audio/Gallery.mp3"
+        },
+        {
+            title: "Letters From My Heart",
+            subtitle: "LETTERS",
+            src: "assets/audio/Letters.mp3"
+        },
+        {
+            title: "Our Timeline",
+            subtitle: "TIMELINE",
+            src: "assets/audio/Timeline.mp3"
+        },
+        {
+            title: "A Little Bonus",
+            subtitle: "SPECIAL MEMORY",
+            src: "assets/audio/bonus.mp3"
+        }
+    ];
+
+    const pageMusicMap = {
+        "index.html": 0,
+        "dashboard.html": 0,
+        "gallery.html": 1,
+        "letters.html": 2,
+        "timeline.html": 3,
+        "music.html": 0,
+        "bonus.html": 4
+    };
+
+    const currentPage = window.location.pathname.split("/").pop().toLowerCase() || "index.html";
+    let currentSong = pageMusicMap[currentPage] ?? 0;
+
+    function updatePlayerText(song) {
+        if (playerTitle) {
+            playerTitle.textContent = song.title;
+        }
+
+        if (playerSubtitle) {
+            playerSubtitle.textContent = song.subtitle;
+        }
+    }
+
+    function updatePlayButton() {
+        if (!toggleButton) return;
+        toggleButton.textContent = audio.paused ? "▶" : "Ⅱ";
+    }
+
+    function loadSong(index, autoplay = false) {
+        currentSong = (index + playlist.length) % playlist.length;
+        const song = playlist[currentSong];
+
+        audio.src = song.src;
+        audio.load();
+        updatePlayerText(song);
+
+        if (autoplay) {
+            audio.play()
+                .then(() => {
+                    updatePlayButton();
+                })
+                .catch(() => {
+                    updatePlayButton();
+                });
+        }
+    }
+
+    function toggleMusic() {
+        if (audio.paused) {
+            audio.play()
+                .then(() => {
+                    updatePlayButton();
+                })
+                .catch(() => {
+                    updatePlayButton();
+                });
+        } else {
+            audio.pause();
+            updatePlayButton();
+        }
+    }
+
+    function nextSong() {
+        loadSong(currentSong + 1, true);
+    }
+
+    function previousSong() {
+        loadSong(currentSong - 1, true);
+    }
+
+    if (toggleButton) {
+        toggleButton.addEventListener("click", toggleMusic);
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener("click", nextSong);
+    }
+
+    if (prevButton) {
+        prevButton.addEventListener("click", previousSong);
+    }
+
+    if (volumeSlider) {
+        audio.volume = Number(volumeSlider.value);
+        volumeSlider.addEventListener("input", function () {
+            audio.volume = Number(this.value);
+        });
+    }
+
+    audio.addEventListener("ended", function () {
+        nextSong();
+    });
+
+    audio.addEventListener("play", updatePlayButton);
+    audio.addEventListener("pause", updatePlayButton);
+
+    loadSong(currentSong, false);
+
+    setTimeout(function () {
+        audio.play()
+            .then(() => {
+                updatePlayButton();
+            })
+            .catch(() => {
+                updatePlayButton();
+            });
+    }, 500);
+
+    function startAfterInteraction() {
+        if (audio.paused) {
+            audio.play()
+                .then(() => {
+                    updatePlayButton();
+                    removeInteractionListeners();
+                })
+                .catch(() => {
+                    removeInteractionListeners();
+                });
+        } else {
+            removeInteractionListeners();
+        }
+    }
+
+    function removeInteractionListeners() {
+        document.removeEventListener("click", startAfterInteraction);
+        document.removeEventListener("keydown", startAfterInteraction);
+        document.removeEventListener("touchstart", startAfterInteraction);
+    }
+
+    document.addEventListener("click", startAfterInteraction, { once: true });
+    document.addEventListener("keydown", startAfterInteraction, { once: true });
+    document.addEventListener("touchstart", startAfterInteraction, { once: true });
+});
